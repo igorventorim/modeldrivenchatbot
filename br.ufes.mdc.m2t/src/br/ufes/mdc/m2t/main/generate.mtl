@@ -8,24 +8,47 @@
 
 package br.ufes.inf.chatbot;
 
+[if (aChatbot.mensageiro = Mensageiro::TELEGRAM)]
 import org.telegram.telegrambots.ApiContextInitializer;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
+[/if]
+[if (aChatbot.mensageiro = Mensageiro::WEB)]
+import static spark.Spark.post;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import org.json.JSONObject;
+import com.google.gson.Gson;
+[/if]
 
 import br.ufes.inf.chatbot.[aChatbot.name.toLower()/].[aChatbot.name.toUpperFirst().concat('BotHandlers')/];
 
 public class App {
 	public static void main( String['[]'/] args ) {
 
-		System.out.println("Starting Chatbot...");
+		System.out.println("Starting Chatbot...");	
+		[if (aChatbot.mensageiro = Mensageiro::TELEGRAM)]
     	ApiContextInitializer.init();
     	TelegramBotsApi telegramBotsApi = new TelegramBotsApi();
 		try {
-    		[aChatbot.name.toUpperFirst()/]BotHandlers chatbot = new [aChatbot.name.toUpperFirst()/]BotHandlers();
+			[aChatbot.name.toUpperFirst()/]BotHandlers chatbot = new [aChatbot.name.toUpperFirst()/]BotHandlers();	
             telegramBotsApi.registerBot(chatbot);
         } catch (TelegramApiException e) {
             e.printStackTrace();
         }
+		[/if]
+		[if (aChatbot.mensageiro = Mensageiro::WEB)]
+		[aChatbot.name.toUpperFirst()/]BotHandlers chatbot = new [aChatbot.name.toUpperFirst()/]BotHandlers();
+		final ConcurrentHashMap<Long,String> usersCurrentState = new ConcurrentHashMap<Long,String>();
+        post("/sendMessage", (request,response)->{
+        	System.out.println(request.body());
+        	JSONObject jsonObject = new JSONObject(request.body());
+        	List<String> messages = chatbot.handleIncomingMessage(usersCurrentState, jsonObject.getLong("chatid"), (String) jsonObject.getString("message"));
+        	response.header("Access-Control-Allow-Origin", "*");
+        	return new Gson().toJson(messages);
+    	});
+		[/if]
+		
 	}
 }
 [/file]
@@ -65,16 +88,19 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
+[if (aChatbot.mensageiro = Mensageiro::WEB)]
+import java.util.ArrayList;
+[/if]
 
 import br.ufes.inf.chatbot.[aChatbot.name.toLower()/].states.State;
 import br.ufes.inf.chatbot.[aChatbot.name.toLower()/].states.StationaryState;
 
-public class [aChatbot.name.toUpperFirst().concat('BotHandlers')/] extends TelegramLongPollingBot {
+public class [aChatbot.name.toUpperFirst().concat('BotHandlers')/] [if (aChatbot.mensageiro = Mensageiro::TELEGRAM)] extends TelegramLongPollingBot [/if]{
 	
 	private [aChatbot.name.toUpperFirst().concat('Filter')/] filter = new [aChatbot.name.toUpperFirst().concat('Filter')/]();
-	private final ConcurrentHashMap<Long,String> usersCurrentState = new ConcurrentHashMap<Long,String>();
+	private ConcurrentHashMap<Long,String> usersCurrentState = new ConcurrentHashMap<Long,String>();
 	
-
+	[if (aChatbot.mensageiro = Mensageiro::TELEGRAM)]
 	public void onUpdateReceived(Update update) {
 		if (update.hasMessage() && update.getMessage().hasText()) {
 	    	handleIncomingMessage(update.getMessage());
@@ -100,12 +126,34 @@ public class [aChatbot.name.toUpperFirst().concat('BotHandlers')/] extends Teleg
 		}
 		
 	}
+	[/if]
+	[if (aChatbot.mensageiro = Mensageiro::WEB)]
+	public List<String> handleIncomingMessage(ConcurrentHashMap<Long,String> currentStates,Long chatId,String message) {
+		
+		usersCurrentState = currentStates;
+		State state = filter.getState(usersCurrentState.getOrDefault(chatId,BotConfig.INIT_STATE.getName()) , message);
+		List<String> list = new ArrayList<String>();
+		if(state instanceof StationaryState) {
+			usersCurrentState.put(chatId, state.getName());
+		}
+		
+		List<SendMessage> response = state.entryPoint(chatId.toString());
+		
+		for (SendMessage sendMessage : response) {
+			list.add(sendMessage.getText());
+		}
+		
+		return list;
+		
+	}
+	[/if]
+
 
 	public String getBotUsername() {
 		return BotConfig.BOT_NAME;
 	}
 
-	@Override
+
 	public String getBotToken() {
 		return BotConfig.BOT_TOKEN;
 	}
@@ -709,6 +757,18 @@ public class Other implements NLUService {
 	    <version>4.5.8</version>
 	</dependency>
 
+	<dependency>
+	    <groupId>com.sparkjava</groupId>
+	    <artifactId>spark-core</artifactId>
+	    <version>2.5.4</version>
+	</dependency>
+	
+	<dependency>
+	    <groupId>com.google.code.gson</groupId>
+	    <artifactId>gson</artifactId>
+	    <version>2.8.0</version>
+	</dependency>
+
 	<!--[protected ('protected')]
  	-->
 	<!--TODO: Inserir novas dependências aqui -->
@@ -783,8 +843,12 @@ $(".mytext").on("keydown", function(e){
         if (text !== ""){
             insertChat("me", text);              
             $(this).val('');
-            // TODO: SEND AJAX REQUEST
-            //insertChat("robot")
+            data = JSON.stringify({chatid:1,message:text})
+            $.post("http://localhost:4567/sendMessage",data ,function(msg){
+            	$.each(JSON.parse(msg), function(index,value){
+            		insertChat("you",value);
+            	});
+            })
         }
     }
 });
