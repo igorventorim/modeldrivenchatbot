@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<description:Group xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:description="http://www.eclipse.org/sirius/description/1.1.0" xmlns:description_1="http://www.eclipse.org/sirius/diagram/description/1.1.0" xmlns:properties="http://www.eclipse.org/sirius/properties/1.0.0" xmlns:properties-ext-widgets-reference="http://www.eclipse.org/sirius/properties/1.0.0/ext/widgets/reference" xmlns:style="http://www.eclipse.org/sirius/diagram/description/style/1.1.0" xmlns:tool="http://www.eclipse.org/sirius/diagram/description/tool/1.1.0" xmlns:tool_1="http://www.eclipse.org/sirius/description/tool/1.1.0" name="mdc" version="12.0.0.2017041100">
+  <ownedViewpoints name="states" modelFileExtension="mdc">
+    <ownedRepresentations xsi:type="description_1:DiagramDescription" name="States diagram" label="Chatbot" domainClass="mdc::Chatbot" enablePopupBars="true">
+      <metamodel href="http://mdc.ufes.br#/"/>
+      <defaultLayer name="Default">
+        <nodeMappings name="TransactionalStateNode" labelDirectEdit="//@ownedViewpoints[name='states']/@ownedRepresentations[name='States%20diagram']/@defaultLayer/@toolSections.0/@ownedTools[name='editNameState']" semanticCandidatesExpression="feature:states" doubleClickDescription="//@ownedViewpoints[name='states']/@ownedRepresentations[name='States%20diagram']/@defaultLayer/@toolSections.0/@ownedTools[name='clickTransactionalState']" domainClass="mdc::TransactionalStateImpl">
+          <style xsi:type="style:DotDescription" borderSizeComputationExpression="2" iconPath="/br.ufes.inf.sample.mdc.design/icons/transactional.png" tooltipExpression="Transactional State" sizeComputationExpression="8" labelPosition="node" resizeKind="NSEW">
+            <borderColor xsi:type="description:SystemColor" href="environment:/viewpoint#//@systemColors/@entries[name='black']"/>
+            <labelColor xsi:type="description:SystemColor" href="environment:/viewpoint#//@systemColors/@entries[name='black']"/>
+            <backgroundColor xsi:type="description:SystemColor" href="environment:/viewpoint#//@systemColors/@entries[name='green']"/>
+          </style>
+        </nodeMappings>
+        <nodeMappings name="StationaryStateNode" labelDirectEdit="//@ownedViewpoints[name='states']/@ownedRepresentations[name='States%20diagram']/@defaultLayer/@toolSections.0/@ownedTools[name='editNameState']" semanticCandidatesExpression="feature:states" doubleClickDescription="//@ownedViewpoints[name='states']/@ownedRepresentations[name='States%20diagram']/@defaultLayer/@toolSections.0/@ownedTools[name='clickStationaryState']" domainClass="mdc::StationaryStateImpl">
+          <conditionnalStyles predicateExpression="aql:self.eContainer().initState == self">
+            <style xsi:type="style:DotDescription" borderSizeComputationExpression="4" iconPath="/br.ufes.inf.sample.mdc.design/icons/stationary.png" sizeComputationExpression="8" labelPosition="node" resizeKind="NSEW">
+              <borderColor xsi:type="description:SystemColor" href="environment:/viewpoint#//@systemColors/@entries[name='light_orange']"/>
+              <labelColor xsi:type="description:SystemColor" href="environment:/viewpoint#//@systemColors/@entries[name='black']"/>
+              <backgroundColor xsi:type="description:SystemColor" href="environment:/viewpoint#//@systemColors/@entries[name='gray']"/>
+            </style>
+          </conditionnalStyles>
+          <conditionnalStyles predicateExpression="aql:self.eContainer().initState &lt;> self">
+            <style xsi:type="style:DotDescription" borderSizeComputationExpression="2" iconPath="/br.ufes.inf.sample.mdc.design/icons/stationary.png" sizeComputationExpression="8" labelPosition="node" resizeKind="NSEW">
+              <borderColor xsi:type="description:SystemColor" href="environment:/viewpoint#//@systemColors/@entries[name='black']"/>
+              <labelColor xsi:type="description:SystemColor" href="environment:/viewpoint#//@systemColors/@entries[name='black']"/>
+              <backgroundColor xsi:type="description:SystemColor" href="environment:/viewpoint#//@systemColors/@entries[name='gray']"/>
+            </style>
+          </conditionnalStyles>
+        </nodeMappings>
+        <edgeMappings name="transitionEdge" deletionDescription="//@ownedViewpoints[name='states']/@ownedRepresentations[name='States%20diagram']/@defaultLayer/@toolSections.0/@ownedTools[name='deleteTransition']" sourceMapping="//@ownedViewpoints[name='states']/@ownedRepresentations[name='States%20diagram']/@defaultLayer/@nodeMappings[name='StationaryStateNode']" targetMapping="//@ownedViewpoints[name='states']/@ownedRepresentations[name='States%20diagram']/@defaultLayer/@nodeMappings[name='TransactionalStateNode'] //@ownedViewpoints[name='states']/@ownedRepresentations[name='States%20diagram']/@defaultLayer/@nodeMappings[name='StationaryStateNode']" targetFinderExpression="feature:transitions" reconnections="//@ownedViewpoints[name='states']/@ownedRepresentations[name='States%20diagram']/@defaultLayer/@toolSections.0/@ownedTools[name='reconnectTrasition']">
+          <conditionnalStyles predicateExpression="aql: view.targetNode.target.oclIsKindOf(mdc::TransactionalState)">
+            <style sourceArrow="InputFillClosedArrow" targetArrow="InputFillClosedArrow" sizeComputationExpression="2">
+              <strokeColor xsi:type="description:SystemColor" href="environment:/viewpoint#//@systemColors/@entries[name='black']"/>
+              <centerLabelStyleDescription labelSize="12">
+                <labelColor xsi:type="description:SystemColor" href="environment:/viewpoint#//@systemColors/@entries[name='black']"/>
+              </centerLabelStyleDescription>
+            </style>
+          </conditionnalStyles>
+          <conditionnalStyles predicateExpression="aql: view.targetNode.target.oclIsKindOf(mdc::StationaryState)">
+            <style lineStyle="dash" targetArrow="InputFillClosedArrow" sizeComputationExpression="2">
+              <strokeColor xsi:type="description:SystemColor" href="environment:/viewpoint#//@systemColors/@entries[name='black']"/>
+              <centerLabelStyleDescription labelSize="12">
+                <labelColor xsi:type="description:SystemColor" href="environment:/viewpoint#//@systemColors/@entries[name='black']"/>
+              </centerLabelStyleDescription>
+            </style>
+          </conditionnalStyles>
+        </edgeMappings>
+        <edgeMappings name="errorEdge" deletionDescription="//@ownedViewpoints[name='states']/@ownedRepresentations[name='States%20diagram']/@defaultLayer/@toolSections.0/@ownedTools[name='deleteError']" sourceMapping="//@ownedViewpoints[name='states']/@ownedRepresentations[name='States%20diagram']/@defaultLayer/@nodeMappings[name='StationaryStateNode']" targetMapping="//@ownedViewpoints[name='states']/@ownedRepresentations[name='States%20diagram']/@defaultLayer/@nodeMappings[name='TransactionalStateNode']" targetFinderExpression="feature:errorState" reconnections="//@ownedViewpoints[name='states']/@ownedRepresentations[name='States%20diagram']/@defaultLayer/@toolSections.0/@ownedTools[name='reconnectError']">
+          <style sourceArrow="InputFillClosedArrow" targetArrow="InputFillClosedArrow" sizeComputationExpression="2">
+            <strokeColor xsi:type="description:SystemColor" href="environment:/viewpoint#//@systemColors/@entries[name='red']"/>
+            <centerLabelStyleDescription labelSize="12">
+              <labelColor xsi:type="description:SystemColor" href="environment:/viewpoint#//@systemColors/@entries[name='red']"/>
+            </centerLabelStyleDescription>
+          </style>
+        </edgeMappings>
+        <toolSections>
+          <ownedTools xsi:type="tool:NodeCreationDescription" name="createTransactionalState" label="TransactionalState" forceRefresh="true" nodeMappings="//@ownedViewpoints[name='states']/@ownedRepresentations[name='States%20diagram']/@defaultLayer/@nodeMappings[name='TransactionalStateNode']" iconPath="/br.ufes.inf.sample.mdc.design/icons/transactional.png">
+            <variable name="container"/>
+            <viewVariable name="containerView"/>
+            <initialOperation>
+              <firstModelOperations xsi:type="tool_1:ChangeContext" browseExpression="var:container">
+                <subModelOperations xsi:type="tool_1:CreateInstance" typeName="mdc::TransactionalStateImpl" referenceName="states">
+                  <subModelOperations xsi:type="tool_1:SetValue" featureName="name" valueExpression="aql:'state_'+(container.states->filter(mdc::State)->size())"/>
+                </subModelOperations>
+              </firstModelOperations>
+            </initialOperation>
+          </ownedTools>
+          <ownedTools xsi:type="tool:NodeCreationDescription" name="createStationaryState" label="StationaryState" forceRefresh="true" nodeMappings="//@ownedViewpoints[name='states']/@ownedRepresentations[name='States%20diagram']/@defaultLayer/@nodeMappings[name='StationaryStateNode']" iconPath="/br.ufes.inf.sample.mdc.design/icons/stationary.png">
+            <variable name="container"/>
+            <viewVariable name="containerView"/>
+            <initialOperation>
+              <firstModelOperations xsi:type="tool_1:ChangeContext" browseExpression="var:container">
+                <subModelOperations xsi:type="tool_1:CreateInstance" typeName="mdc::StationaryStateImpl" referenceName="states">
+                  <subModelOperations xsi:type="tool_1:SetValue" featureName="name" valueExpression="aql:'state_'+(container.states->filter(mdc::State)->size())"/>
+                </subModelOperations>
+              </firstModelOperations>
+            </initialOperation>
+          </ownedTools>
+          <ownedTools xsi:type="tool:EdgeCreationDescription" name="setTransition" label="setTransition" precondition="aql:preSource&lt;>preTarget " forceRefresh="true" edgeMappings="//@ownedViewpoints[name='states']/@ownedRepresentations[name='States%20diagram']/@defaultLayer/@edgeMappings[name='transitionEdge']" iconPath="/br.ufes.inf.sample.mdc.design/icons/transition.png">
+            <sourceVariable name="source"/>
+            <targetVariable name="target"/>
+            <sourceViewVariable name="sourceView"/>
+            <targetViewVariable name="targetView"/>
+            <initialOperation>
+              <firstModelOperations xsi:type="tool_1:ChangeContext" browseExpression="var:source">
+                <subModelOperations xsi:type="tool_1:SetValue" featureName="transitions" valueExpression="var:target"/>
+              </firstModelOperations>
+            </initialOperation>
+          </ownedTools>
+          <ownedTools xsi:type="tool:EdgeCreationDescription" name="setError" label="setError" forceRefresh="true" edgeMappings="//@ownedViewpoints[name='states']/@ownedRepresentations[name='States%20diagram']/@defaultLayer/@edgeMappings[name='errorEdge']" iconPath="/br.ufes.inf.sample.mdc.design/icons/error.png">
+            <sourceVariable name="source"/>
+            <targetVariable name="target"/>
+            <sourceViewVariable name="sourceView"/>
+            <targetViewVariable name="targetView"/>
+            <initialOperation>
+              <firstModelOperations xsi:type="tool_1:ChangeContext" browseExpression="var:source">
+                <subModelOperations xsi:type="tool_1:SetValue" featureName="errorState" valueExpression="var:target"/>
+              </firstModelOperations>
+            </initialOperation>
+          </ownedTools>
+          <ownedTools xsi:type="tool:ReconnectEdgeDescription" name="reconnectTrasition" label="reconnectTrasition" forceRefresh="true" elementsToSelect="aql:source.transitions->excluding(element)">
+            <source name="source"/>
+            <target name="target"/>
+            <sourceView name="sourceView"/>
+            <targetView name="targetView"/>
+            <element name="element"/>
+            <initialOperation>
+              <firstModelOperations xsi:type="tool_1:ChangeContext" browseExpression="var:element">
+                <subModelOperations xsi:type="tool_1:SetValue" featureName="transitions" valueExpression="var:target"/>
+              </firstModelOperations>
+            </initialOperation>
+            <edgeView name="edgeView"/>
+          </ownedTools>
+          <ownedTools xsi:type="tool:DeleteElementDescription" name="deleteTransition" label="deleteTransition" forceRefresh="true">
+            <element name="element"/>
+            <elementView name="elementView"/>
+            <containerView name="containerView"/>
+            <initialOperation>
+              <firstModelOperations xsi:type="tool_1:ChangeContext" browseExpression="var:element">
+                <subModelOperations xsi:type="tool_1:Unset" featureName="transitions"/>
+              </firstModelOperations>
+            </initialOperation>
+          </ownedTools>
+          <ownedTools xsi:type="tool:DeleteElementDescription" name="deleteError" label="deleteError" forceRefresh="true">
+            <element name="element"/>
+            <elementView name="elementView"/>
+            <containerView name="containerView"/>
+            <initialOperation>
+              <firstModelOperations xsi:type="tool_1:ChangeContext" browseExpression="var:element">
+                <subModelOperations xsi:type="tool_1:Unset" featureName="errorState"/>
+              </firstModelOperations>
+            </initialOperation>
+          </ownedTools>
+          <ownedTools xsi:type="tool:ReconnectEdgeDescription" name="reconnectError" label="reconnectError" forceRefresh="true">
+            <source name="source"/>
+            <target name="target"/>
+            <sourceView name="sourceView"/>
+            <targetView name="targetView"/>
+            <element name="element"/>
+            <initialOperation>
+              <firstModelOperations xsi:type="tool_1:ChangeContext" browseExpression="var:element">
+                <subModelOperations xsi:type="tool_1:SetValue" featureName="errorState" valueExpression="var:target"/>
+              </firstModelOperations>
+            </initialOperation>
+            <edgeView name="edgeView"/>
+          </ownedTools>
+          <ownedTools xsi:type="tool:DirectEditLabel" name="editNameState">
+            <mask mask="{0}"/>
+            <initialOperation>
+              <firstModelOperations xsi:type="tool_1:SetValue" featureName="name" valueExpression="var:0"/>
+            </initialOperation>
+          </ownedTools>
+          <ownedTools xsi:type="tool:DoubleClickDescription" name="clickTransactionalState" forceRefresh="true" mappings="//@ownedViewpoints[name='states']/@ownedRepresentations[name='States%20diagram']/@defaultLayer/@nodeMappings[name='TransactionalStateNode']">
+            <element name="element"/>
+            <elementView name="elementView"/>
+            <initialOperation>
+              <firstModelOperations xsi:type="properties:WizardModelOperation" windowTitleExpression="Edit Transactional State" titleExpression="Página de edição de estados transacionais">
+                <pages name="page1" labelExpression="var:self" domainClass="mdc::TransactionalStateImpl" groups="//@ownedViewpoints[name='states']/@ownedRepresentations[name='States%20diagram']/@defaultLayer/@toolSections.0/@ownedTools[name='clickTransactionalState']/@initialOperation/@firstModelOperations/@groups.0" indented="true"/>
+                <groups name="group1" labelExpression="feature:input" domainClass="mdc::TransactionalStateImpl">
+                  <controls xsi:type="properties:TextDescription" name="mdc::TransactionalStateImpl name" labelExpression="aql:input.emfEditServices(self).getText(self.eClass().getEStructuralFeature('name')) + ':'" helpExpression="aql:input.emfEditServices(self).getDescription(self.eClass().getEStructuralFeature('name'))" isEnabledExpression="aql:self.eClass().getEStructuralFeature('name').changeable" valueExpression="aql:self.name">
+                    <initialOperation>
+                      <firstModelOperations xsi:type="tool_1:SetValue" featureName="name" valueExpression="var:newValue"/>
+                    </initialOperation>
+                  </controls>
+                  <controls xsi:type="properties:ListDescription" name="mdc::TransactionalStateImpl input" labelExpression="aql:input.emfEditServices(self).getText(self.eClass().getEStructuralFeature('input')) + ':'" helpExpression="aql:input.emfEditServices(self).getDescription(self.eClass().getEStructuralFeature('input'))" isEnabledExpression="aql:self.eClass().getEStructuralFeature('input').changeable" valueExpression="aql:self.input" displayExpression="var:value">
+                    <actions labelExpression="var:input">
+                      <initialOperation>
+                        <firstModelOperations xsi:type="tool_1:ChangeContext" browseExpression="var:self"/>
+                      </initialOperation>
+                    </actions>
+                  </controls>
+                  <controls xsi:type="properties:ListDescription" name="mdc::TransactionalStateImpl message" labelExpression="aql:input.emfEditServices(self).getText(self.eClass().getEStructuralFeature('messages')) + ':'" helpExpression="aql:input.emfEditServices(self).getDescription(self.eClass().getEStructuralFeature('input')) + ':'" isEnabledExpression="aql:self.eClass().getEStructuralFeature('messages').changeable" valueExpression="aql:self.messages" displayExpression="var:value">
+                    <actions labelExpression="var:input">
+                      <initialOperation>
+                        <firstModelOperations xsi:type="tool_1:ChangeContext" browseExpression="var:self"/>
+                      </initialOperation>
+                    </actions>
+                  </controls>
+                </groups>
+              </firstModelOperations>
+            </initialOperation>
+          </ownedTools>
+          <ownedTools xsi:type="tool:DoubleClickDescription" name="clickStationaryState" forceRefresh="true" mappings="//@ownedViewpoints[name='states']/@ownedRepresentations[name='States%20diagram']/@defaultLayer/@nodeMappings[name='StationaryStateNode']">
+            <element name="element"/>
+            <elementView name="elementView"/>
+            <initialOperation>
+              <firstModelOperations xsi:type="properties:WizardModelOperation" windowTitleExpression="Edit Stacionary State" titleExpression="Página de edição de estados estacionários">
+                <pages name="page2" labelExpression="var:self" domainClass="mdc::StationaryStateImpl" groups="//@ownedViewpoints[name='states']/@ownedRepresentations[name='States%20diagram']/@defaultLayer/@toolSections.0/@ownedTools[name='clickStationaryState']/@initialOperation/@firstModelOperations/@groups.0"/>
+                <groups name="group2" domainClass="mdc::StationaryStateImpl">
+                  <controls xsi:type="properties:TextDescription" name="mdc::StationaryStateImpl name" labelExpression="aql:input.emfEditServices(self).getText(self.eClass().getEStructuralFeature('name')) + ':'" helpExpression="aql:input.emfEditServices(self).getDescription(self.eClass().getEStructuralFeature('name'))" isEnabledExpression="aql:self.eClass().getEStructuralFeature('name').changeable" valueExpression="aql:self.name">
+                    <initialOperation>
+                      <firstModelOperations xsi:type="tool_1:SetValue" featureName="name" valueExpression="var:newValue"/>
+                    </initialOperation>
+                  </controls>
+                  <controls xsi:type="properties:ListDescription" name="mdc::StationaryStateImpl input" labelExpression="aql:input.emfEditServices(self).getText(self.eClass().getEStructuralFeature('input')) + ':'" helpExpression="aql:input.emfEditServices(self).getDescription(self.eClass().getEStructuralFeature('input'))" isEnabledExpression="aql:self.eClass().getEStructuralFeature('input').changeable" valueExpression="aql:self.input" displayExpression="var:value"/>
+                  <controls xsi:type="properties-ext-widgets-reference:ExtReferenceDescription" name="mdc::StationaryStateImpl errorState" referenceNameExpression="aql:'errorState'"/>
+                </groups>
+              </firstModelOperations>
+            </initialOperation>
+          </ownedTools>
+        </toolSections>
+      </defaultLayer>
+    </ownedRepresentations>
+    <ownedJavaExtensions qualifiedClassName="br.ufes.inf.sample.mdc.design.Services"/>
+  </ownedViewpoints>
+</description:Group>

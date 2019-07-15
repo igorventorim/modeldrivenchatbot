@@ -1,0 +1,940 @@
+[comment encoding = UTF-8 /]
+[module generate('http://mdc.ufes.br')]
+
+
+[template public generateElement(aChatbot : Chatbot)]
+[comment @main/]
+[file ('src/main/java/br/ufes/inf/chatbot/App.java', false, 'UTF-8')]
+
+package br.ufes.inf.chatbot;
+
+import org.telegram.telegrambots.ApiContextInitializer;
+import org.telegram.telegrambots.meta.TelegramBotsApi;
+import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
+
+import br.ufes.inf.chatbot.[aChatbot.name.toLower()/].[aChatbot.name.toUpperFirst().concat('BotHandlers')/];
+
+public class App {
+	public static void main( String['[]'/] args ) {
+
+		System.out.println("Starting Chatbot...");
+    	ApiContextInitializer.init();
+    	TelegramBotsApi telegramBotsApi = new TelegramBotsApi();
+		try {
+    		[aChatbot.name.toUpperFirst()/]BotHandlers chatbot = new [aChatbot.name.toUpperFirst()/]BotHandlers();
+            telegramBotsApi.registerBot(chatbot);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
+	}
+}
+[/file]
+
+
+
+
+[file ('src/main/java/br/ufes/inf/chatbot/'.concat(aChatbot.name.toLower().concat('/BotConfig.java')), false, 'UTF-8')]
+
+package br.ufes.inf.chatbot.[aChatbot.name.toLower()/];
+
+import br.ufes.inf.chatbot.[aChatbot.name.toLower()/].states.[aChatbot.initState.name.toUpperFirst()/];
+import br.ufes.inf.chatbot.[aChatbot.name.toLower()/].states.StationaryState;
+
+public final class BotConfig {
+
+	public static final String BOT_TOKEN = "[aChatbot.token/]";
+
+	public static final String BOT_NAME = "[aChatbot.name/]";
+
+	public static final StationaryState INIT_STATE = [aChatbot.initState.name.toUpperFirst()/].INSTANCE;
+
+}
+[/file]
+
+
+
+
+[file ('src/main/java/br/ufes/inf/chatbot/'.concat(aChatbot.name.toLower().concat('/')).concat(aChatbot.name.toUpperFirst().concat('BotHandlers.java')), false, 'UTF-8')]
+package br.ufes.inf.chatbot.[aChatbot.name.toLower()/];
+
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+
+import org.telegram.telegrambots.bots.TelegramLongPollingBot;
+import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.objects.Message;
+import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
+
+import br.ufes.inf.chatbot.[aChatbot.name.toLower()/].states.State;
+import br.ufes.inf.chatbot.[aChatbot.name.toLower()/].states.StationaryState;
+
+public class [aChatbot.name.toUpperFirst().concat('BotHandlers')/] extends TelegramLongPollingBot {
+	
+	private [aChatbot.name.toUpperFirst().concat('Filter')/] filter = new [aChatbot.name.toUpperFirst().concat('Filter')/]();
+	private final ConcurrentHashMap<Long,String> usersCurrentState = new ConcurrentHashMap<Long,String>();
+	
+
+	public void onUpdateReceived(Update update) {
+		if (update.hasMessage() && update.getMessage().hasText()) {
+	    	handleIncomingMessage(update.getMessage());
+	    }
+	}
+	
+	private void handleIncomingMessage(Message message) {
+		
+		State state = filter.getState(usersCurrentState.getOrDefault(message.getChatId(),BotConfig.INIT_STATE.getName()) , message.getText());
+		
+		if(state instanceof StationaryState) {
+			usersCurrentState.put(message.getChatId(), state.getName());
+		}
+		
+		List<SendMessage> response = state.entryPoint(message.getChatId().toString());
+		
+		for (SendMessage sendMessage : response) {
+			try {
+				execute(sendMessage);
+			} catch (TelegramApiException e) {
+				e.printStackTrace();
+			}
+		}
+		
+	}
+
+	public String getBotUsername() {
+		return BotConfig.BOT_NAME;
+	}
+
+	@Override
+	public String getBotToken() {
+		return BotConfig.BOT_TOKEN;
+	}
+	
+}
+[/file]
+
+
+
+
+
+[file ('src/main/java/br/ufes/inf/chatbot/'.concat(aChatbot.name.toLower().concat('/')).concat(aChatbot.name.toUpperFirst().concat('Filter.java')), false, 'UTF-8')]
+package br.ufes.inf.chatbot.[aChatbot.name.toLower()/];
+
+import br.ufes.inf.chatbot.[aChatbot.name.toLower()/].states.State;
+import br.ufes.inf.chatbot.[aChatbot.name.toLower()/].states.StationaryState;
+import br.ufes.inf.chatbot.[aChatbot.name.toLower()/].states.TransactionalState;
+import br.ufes.inf.chatbot.nlu.NLUService;
+[if (aChatbot.nluService = NLUService::WIT)]
+import br.ufes.inf.chatbot.nlu.Wit;
+[/if]
+[if (aChatbot.nluService = NLUService::OTHER)]
+import br.ufes.inf.chatbot.nlu.Other;
+[/if]
+[for (st : State | states)]
+import br.ufes.inf.chatbot.[aChatbot.name.toLower()/].states.[st.name.toUpperFirst()/];
+[/for]
+
+public class [(aChatbot.name.toUpperFirst().concat('Filter'))/] {
+	
+	[(aChatbot.name.toUpperFirst().concat('Filter'))/]() {
+	[for (it : State | aChatbot.states)]
+		[if (it.oclIsKindOf(StationaryStateImpl))]
+		[it.name.toUpperFirst()/].INSTANCE.sincTransitions();
+		[/if]
+		[it.name.toUpperFirst()/].INSTANCE.sincMessages();
+	[/for]
+	}
+
+	public State getState(String currentStateName,String text) {
+		[if (aChatbot.nluService = NLUService::WIT)]
+		NLUService nlu = new Wit();
+		[/if]
+		[if (aChatbot.nluService = NLUService::OTHER)]
+		NLUService nlu = new Other();
+		[/if]
+		String processedInput = nlu.query(text);	
+		State currentState = getStateByName(currentStateName);
+		return ((currentState instanceof TransactionalState) ?  currentState : ((StationaryState)currentState).handler(processedInput));
+	}
+
+	private State getStateByName(String currentState) {
+		switch(currentState) {
+		[for (it : State | aChatbot.states)]
+			case "[it.name.toUpperCase()/]":
+				return [it.name.toUpperFirst()/].INSTANCE;
+		[/for]
+			default:
+				return [aChatbot.initState.name.toUpperFirst()/].INSTANCE;
+		}
+	}
+}
+[/file]
+
+
+
+
+
+[file ('src/main/java/br/ufes/inf/chatbot/'.concat(aChatbot.name.toLower().concat('/')).concat('states/State.java'), false, 'UTF-8')]
+package br.ufes.inf.chatbot.[aChatbot.name.toLower()/].states;
+
+import java.util.List;
+
+import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+
+public interface State {
+	
+	public List<String> getMessages();
+
+	public String getName();
+
+	public List<SendMessage> entryPoint(String to);
+
+	public void sincMessages();
+
+}
+[/file]
+
+
+
+
+
+[file ('src/main/java/br/ufes/inf/chatbot/'.concat(aChatbot.name.toLower().concat('/')).concat('states/StationaryState.java'), false, 'UTF-8')]
+package br.ufes.inf.chatbot.[aChatbot.name.toLower()/].states;
+
+import java.util.List;
+
+public interface StationaryState extends State {
+
+	public State handler(String text);
+	
+	public List<State> getTransitions();
+	
+	public void sincTransitions();
+	
+}	
+[/file]
+
+
+
+
+
+[file ('src/main/java/br/ufes/inf/chatbot/'.concat(aChatbot.name.toLower().concat('/')).concat('states/TransactionalState.java'), false, 'UTF-8')]
+package br.ufes.inf.chatbot.[aChatbot.name.toLower()/].states;
+
+public interface TransactionalState extends State {
+
+}
+[/file]
+
+
+
+
+
+[for (it : State | aChatbot.states)]
+	[if (it.oclIsKindOf(StationaryStateImpl))]
+		[file ('src/main/java/br/ufes/inf/chatbot/'.concat(aChatbot.name.toLower().concat('/')).concat('states/'.concat(it.name.toUpperFirst().concat('.java'))), false, 'UTF-8')]
+package br.ufes.inf.chatbot.[aChatbot.name.toLower()/].states;
+			
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+
+import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+
+public enum [it.name.toUpperFirst()/] implements StationaryState {
+
+	INSTANCE;
+	private final String name = "[it.name.toUpper()/]";
+
+	private List<String> messages = new ArrayList<String>();
+
+	private final List<State> transitions = new ArrayList<State>();
+
+	public List<String> getMessages() {
+		return messages;
+	}
+
+	public List<SendMessage> entryPoint(String to) {
+		List<SendMessage> response = new ArrayList<SendMessage>();
+		SendMessage message1 = null;
+		//[protected ('modifyEntryPointSS')]
+		// TODO: Adicionar novas funcionalidades do estado aqui!
+		//[/protected]
+
+		//for (String message : messages) {
+		if(messages.size() == 0) {
+			message1 = new SendMessage()
+	                .setChatId(to)
+	                .setText("Arrived in [it.name.toUpperFirst()/]");
+		}else {
+			Random r = new Random();
+			new SendMessage()
+	                .setChatId(to)
+	                .setText(messages.get(r.nextInt(messages.size())));
+		}
+		//}
+		
+		return response;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public State handler(String text) {
+		
+		//[protected ('modifyHandlerSS')]
+		// TODO: Adicionar novas funcionalidades do estado aqui!
+		//[/protected]
+
+		for (State state : transitions) {
+			if(state.getName().equals(text)) {
+				return state;
+			}
+		}
+
+		return [it.oclAsType(StationaryStateImpl).errorState.name.toUpperFirst()/].INSTANCE;
+		
+	}
+
+	public List<State> getTransitions() {
+		return transitions;
+	}
+
+	public void sincTransitions() {
+
+		[for (st : State | it.oclAsType(StationaryStateImpl).transitions)]
+			transitions.add([st.name.toUpperFirst()/].INSTANCE);
+		[/for]
+
+	}
+
+	public void sincMessages() {
+		[for (s : String | it.messages)]
+			messages.add("[s.toString()/]");
+		[/for]
+	}
+
+}
+		[/file]
+	[/if]
+
+
+
+
+
+
+	[if (it.oclIsKindOf(TransactionalStateImpl))]
+		[file ('src/main/java/br/ufes/inf/chatbot/'.concat(aChatbot.name.toLower().concat('/')).concat('states/'.concat(it.name.toUpperFirst().concat('.java'))), false, 'UTF-8')]
+package br.ufes.inf.chatbot.[aChatbot.name.toLower()/].states;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+
+import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+
+public enum [it.name.toUpperFirst()/] implements TransactionalState {
+	INSTANCE;
+
+	private List<String> messages = new ArrayList<String>();
+
+	private final String name = "[it.name.toUpper()/]";
+
+	public List<String> getMessages() {
+		return messages;
+	}
+
+	public List<SendMessage> entryPoint(String to) {
+		List<SendMessage> response = new ArrayList<SendMessage>();
+		SendMessage message1 = null;
+		if(messages.size() == 0) {
+			message1 = new SendMessage()
+	                .setChatId(to)
+	                .setText("Arrived in [it.name.toUpperFirst()/]");
+		}else {
+			Random r = new Random();
+			message1 = new SendMessage()
+	                .setChatId(to)
+	                .setText(messages.get(r.nextInt(messages.size())));
+		}
+		
+		response.add(message1);
+
+		//[protected ('modifyEntryPointTS')]
+		// TODO: Adicionar novas funcionalidades do estado aqui!
+		//[/protected]
+
+		return response;
+	}
+	
+	public String getName() {
+		return name;
+	}
+
+	public void sincMessages() {
+		[for (s : String | it.messages)]
+			messages.add("[s.toString()/]");
+		[/for]
+	}
+
+}
+		[/file]
+	[/if]
+[/for]
+
+
+
+
+
+[file ('src/main/java/br/ufes/inf/chatbot/nlu/NLUService.java', false, 'UTF-8')]
+package br.ufes.inf.chatbot.nlu;
+
+public interface NLUService {
+
+	public void train();
+	
+	public String query(String text);
+	
+}
+[/file]
+
+
+
+
+[comment @main/]
+[file ('src/main/java/br/ufes/inf/chatbot/nlu/Training.java', false, 'UTF-8')]
+package br.ufes.inf.chatbot.nlu;
+
+public class Training {
+
+	public static void main(String['[]'/] args) {
+		
+		[if (aChatbot.nluService = NLUService::WIT)]
+		NLUService nlu = new Wit();
+		[/if]
+		[if (aChatbot.nluService = NLUService::OTHER)]
+		NLUService nlu = new Other();
+		[/if]
+		
+		nlu.train();
+		
+	}
+
+}
+[/file]
+
+
+
+[if (aChatbot.nluService = NLUService::WIT)]
+	
+[file ('src/main/java/br/ufes/inf/chatbot/nlu/Wit.java', false, 'UTF-8')]
+package br.ufes.inf.chatbot.nlu;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.Properties;
+
+import org.apache.http.HttpEntity;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.util.EntityUtils;
+import org.json.JSONObject;
+import java.util.Scanner;
+
+public class Wit implements NLUService {
+
+	private final String pathFileProperties = "[aChatbot.name.toLower()/].properties";
+	private final String pathFileTraining = "[aChatbot.name.toLower()/]_training.json";
+	private final double THRESHOLD = 0.7;
+
+	public void createAPP() {
+		
+		Scanner scanner = new Scanner(System.in);
+		String inputUser;
+		do{
+			System.out.print("Create Wit app? ['[y/n]'/]: ");
+			inputUser = scanner.next().toLowerCase();
+		}while(!inputUser.equals("y") && !inputUser.equals("n") && !inputUser.equals("yes") && !inputUser.equals("no") );
+		if(inputUser.equals("n") || inputUser.equals("no"))
+		{
+			//TODO: Set .properties
+			return;		
+		}else
+		{
+			CloseableHttpClient httpClient = HttpClients.createDefault();
+			try {
+				HttpPost httpPost = new HttpPost("https://api.wit.ai/apps?v='20190707'");
+				httpPost.setHeader("Authorization", "Bearer [aChatbot.tokenNluService.toString()/]");
+				httpPost.setHeader("Content-Type", "application/json");
+				String json = "{'name':'[aChatbot.name.toLower()/]','lang':'pt','private':'false', 'timezone':'Brazil/DeNoronha' }";
+				StringEntity entity = new StringEntity(json);
+				httpPost.setEntity(entity);
+				CloseableHttpResponse response2 = httpClient.execute(httpPost);
+	
+				try {
+				    System.out.println(response2.getStatusLine());
+				    HttpEntity entity2 = response2.getEntity();
+				    if (entity2 != null && response2.getStatusLine().getStatusCode() == 200) {
+				           String retSrc = EntityUtils.toString(entity2); 
+				           // parsing JSON
+				           JSONObject result = new JSONObject(retSrc); //Convert String to JSON Object
+				           String appId = result.getString("app_id");
+				           String token = result.getString("access_token");
+				           Properties props = new Properties();
+				           props.setProperty("app_id", appId);
+				           props.setProperty("token", token);
+				           File f = new File("[aChatbot.name.toLower()/].properties");
+				           OutputStream out = new FileOutputStream(f);
+				           props.store(out, "Armazenando credenciais da nova aplicação.");
+				           
+				           System.out.println("Aplicação [aChatbot.name.toLower()/] criada com sucesso!");
+			        }
+				} finally {
+				    response2.close();
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+				System.err.println("Aconteceu algum problema ao criar a nova aplicação");
+			}
+
+		}
+	}
+
+	public void train() {
+		
+		this.createAPP();
+		
+		CloseableHttpClient httpClient = HttpClients.createDefault();
+		try(InputStream input = new FileInputStream(pathFileProperties)) {
+			
+			Properties prop = new Properties();
+            prop.load(input);
+            
+			HttpPost httpPost = new HttpPost("https://api.wit.ai/samples?v='20190707'");
+			httpPost.setHeader("Authorization", "Bearer "+prop.getProperty("token"));
+			httpPost.setHeader("Content-Type", "application/json");
+			
+			String json = new String(Files.readAllBytes(Paths.get(pathFileTraining)));
+			StringEntity entity = new StringEntity(json,"UTF-8");
+			
+			httpPost.setEntity(entity);
+			CloseableHttpResponse response2 = httpClient.execute(httpPost);
+			
+			try {
+			    System.out.println(response2.getStatusLine());
+			    HttpEntity entity2 = response2.getEntity();
+			    
+			    if (entity2 != null && response2.getStatusLine().getStatusCode() == 200) {
+			           String retSrc = EntityUtils.toString(entity2);
+			           JSONObject result = new JSONObject(retSrc);
+			           
+			           if(result.getBoolean("sent")) {
+			        	   System.out.println("Treinamento realizado com sucesso!\nNúmero de amostras utilizadas no treinamento: "+String.valueOf(result.getInt("n")));
+			           }			    
+			    }
+			} finally {
+			    response2.close();
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			System.err.println("Aconteceu algum problema ao treinar a aplicação");
+		}
+		
+	}
+
+	public boolean updateApp() {
+		//TODO
+		return false;
+	}
+	
+	public boolean deleteApp() {
+		//TODO
+		return false;
+	}
+[comment]TODO: RETORNAR LISTA DE INTENÇÕES[/comment]
+	public String query(String text) {
+		CloseableHttpClient httpClient = HttpClients.createDefault();
+		String intent = "";
+		try(InputStream input = new FileInputStream(pathFileProperties)) {
+			
+			Properties prop = new Properties();
+            prop.load(input);
+			
+            URIBuilder builder = new URIBuilder();
+            builder.setScheme("https").setHost("api.wit.ai").setPath("message")
+            	.setParameter("v", "20190707")
+            	.setParameter("q", text);
+            
+            URI uri = builder.build();
+			HttpGet httpGet = new HttpGet(uri);
+			httpGet.setHeader("Authorization", "Bearer "+prop.getProperty("token"));
+			
+			CloseableHttpResponse response2 = httpClient.execute(httpGet);
+			
+			try {
+				System.out.println(response2.getStatusLine());
+			    HttpEntity entity2 = response2.getEntity();
+			    
+			    if (entity2 != null && response2.getStatusLine().getStatusCode() == 200) {
+		           String retSrc = EntityUtils.toString(entity2);
+		           JSONObject result = new JSONObject(retSrc);
+				   if(!result.getJSONObject("entities").isEmpty()){
+					if(new JSONObject(result.getJSONObject("entities").getJSONArray("intent").get(0).toString()).getDouble("confidence") >= THRESHOLD ) {
+					   intent = new JSONObject(result.getJSONObject("entities").getJSONArray("intent").get(0).toString()).getString("value");   
+					}
+				   }
+				   
+			    }
+			} finally {
+			    response2.close();
+			}
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+			System.err.println("Aconteceu algum problema ao tentar entender a frase informado.");
+		}
+		
+		
+		return intent;
+	}
+
+	
+}
+[/file]
+
+[/if]
+[if (aChatbot.nluService = NLUService::OTHER)]
+[file ('src/main/java/br/ufes/inf/chatbot/nlu/Other.java', false, 'UTF-8')]
+package br.ufes.inf.chatbot.nlu;
+
+public class Other implements NLUService {
+	
+	private final String pathFileTraining = "[aChatbot.name.toLower()/]_training.json";
+
+	public void train() {
+
+		// [protected ('placeTrainProtected')]
+		// TODO: Write your code here.
+
+		// [/protected]
+	
+	}
+
+	public String query(String text) {
+		String result;
+		// [protected ('placeQueryProtected')]
+		result= "";
+		// TODO: Write your code here.
+
+		// [/protected]
+
+		return result;
+	}
+}
+[/file]
+[/if]
+
+
+
+[file (aChatbot.name.toLower().concat('_training.json'), false, 'UTF-8')]
+['['/]
+	[for (st : State | aChatbot.states)]
+		[for (it : String | st.input)]
+	{
+	 "text":"[it.toString()/]",
+	 "entities": ['['/]
+		 {
+		 	"entity": "intent",
+		 	"value": "[st.name.toUpper()/]"
+		 }
+	 [']'/]
+	},
+		[/for]	
+	[/for]
+[']'/]
+[/file]
+
+
+
+[file ('pom.xml', false, 'UTF-8')]
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>br.ufes.inf</groupId>
+  <artifactId>[aChatbot.name.toLower()/]</artifactId>
+  <version>0.0.1-SNAPSHOT</version>
+  <packaging>jar</packaging>
+
+  <name>[aChatbot.name.toLower()/]</name>
+  <url>http://maven.apache.org</url>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+	<java.version>1.8</java.version>
+	<maven.compiler.source>1.8</maven.compiler.source>
+    <maven.compiler.target>1.8</maven.compiler.target>
+  </properties>
+
+  <dependencies>
+
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>3.8.1</version>
+      <scope>test</scope>
+    </dependency>
+
+	<dependency>
+        <groupId>org.telegram</groupId>
+        <artifactId>telegrambots</artifactId>
+        <version>4.3.1</version>
+    </dependency>
+
+	<dependency>
+	    <groupId>org.apache.httpcomponents</groupId>
+	    <artifactId>httpclient</artifactId>
+	    <version>4.5.8</version>
+	</dependency>
+
+	<!--[protected ('protected')]
+ 	-->
+	<!--TODO: Inserir novas dependências aqui -->
+ 	<!--[/protected] -->   
+
+  </dependencies>
+</project>
+[/file]
+
+
+[if (aChatbot.mensageiro = Mensageiro::WEB)]
+[file ('chat.js', false, 'UTF-8')]
+var me = {};
+me.avatar = "data:image/png;base64,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";
+
+var you = {};
+you.avatar = "http://www.techladies.com.br/wp-content/uploads/2018/08/0oz2e-hQtsHOWzoB4.jpeg";
+
+function formatAMPM(date) {
+    var hours = date.getHours();
+    var minutes = date.getMinutes();
+    var ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    hours = hours ? hours : 12; // the hour '0' should be '12'
+    minutes = minutes < 10 ? '0'+minutes : minutes;
+    var strTime = hours + ':' + minutes + ' ' + ampm;
+    return strTime;
+}            
+
+//-- No use time. It is a javaScript effect.
+function insertChat(who, text, time){
+    if (time === undefined){
+        time = 0;
+    }
+    var control = "";
+    var date = formatAMPM(new Date());
+    
+    if (who == "me"){
+        control = '<li style="width:100%">' +
+                        '<div class="msj macro">' +
+                        '<div class="avatar"><img class="img-circle" style="width:100%;" src="'+ me.avatar +'" /></div>' +
+                            '<div class="text text-l">' +
+                                '<p>'+ text +'</p>' +
+                                '<p><small>'+date+'</small></p>' +
+                            '</div>' +
+                        '</div>' +
+                    '</li>';                    
+    }else{
+        control = '<li style="width:100%;">' +
+                        '<div class="msj-rta macro">' +
+                            '<div class="text text-r">' +
+                                '<p>'+text+'</p>' +
+                                '<p><small>'+date+'</small></p>' +
+                            '</div>' +
+                        '<div class="avatar" style="padding:0px 0px 0px 10px !important"><img class="img-circle" style="width:100%;" src="'+you.avatar+'" /></div>' +                                
+                  '</li>';
+    }
+    setTimeout(
+        function(){                        
+            $("ul").append(control).scrollTop($("ul").prop('scrollHeight'));
+        }, time);
+    
+}
+
+function resetChat(){
+    $("ul").empty();
+}
+
+$(".mytext").on("keydown", function(e){
+    if (e.which == 13){
+        var text = $(this).val();
+        if (text !== ""){
+            insertChat("me", text);              
+            $(this).val('');
+            // TODO: SEND AJAX REQUEST
+            //insertChat("robot")
+        }
+    }
+});
+
+$('body > div > div > div:nth-child(2) > span').click(function(){
+    $(".mytext").trigger({type: 'keydown', which: 13, keyCode: 13});
+})
+
+//-- Clear Chat
+resetChat();
+
+insertChat("you", "Olá, eu sou o [aChatbot.name.toString()/]", 0);  
+
+[/file]
+
+[file ('index.html', false, 'UTF-8')]
+<!DOCTYPE html>
+<html>
+    <head>
+            <meta charset="utf-8">
+            <meta name="robots" content="noindex, nofollow">
+            <title>Model Driven Chatbot - [aChatbot.name.toString()/] </title>
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <link href="https://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
+            <link rel="stylesheet" type="text/css" href="style.css">
+            <script src="https://code.jquery.com/jquery-1.11.1.min.js"></script>
+            <script src="https://netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min.js"></script>
+    </head>
+    <body>
+        <br/>
+        <div class="col-sm-6 col-sm-offset-3 frame">
+            <ul></ul>
+            <div>
+                <div class="msj-rta macro">                        
+                    <div class="text text-r" style="background:whitesmoke !important">
+                        <input class="mytext" placeholder="Type a message"/>
+                    </div> 
+
+                </div>
+                <div style="padding:10px;">
+                    <span class="glyphicon glyphicon-share-alt"></span>
+                </div>                
+            </div>
+        </div>
+        <br><br>
+        <script src="chat.js"></script>       
+    </body>
+</html>
+[/file]
+
+[file ('style.css', false, 'UTF-8')]
+.mytext{
+    border:0;padding:10px;background:whitesmoke;
+}
+.text{
+    width:75%;display:flex;flex-direction:column;
+}
+.text > p:first-of-type{
+    width:100%;margin-top:0;margin-bottom:auto;line-height: 13px;font-size: 12px;
+}
+.text > p:last-of-type{
+    width:100%;text-align:right;color:silver;margin-bottom:-7px;margin-top:auto;
+}
+.text-l{
+    float:left;padding-right:10px;
+}        
+.text-r{
+    float:right;padding-left:10px;
+}
+.avatar{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    width:25%;
+    float:left;
+    padding-right:10px;
+}
+.macro{
+    margin-top:5px;width:85%;border-radius:5px;padding:5px;display:flex;
+}
+.msj-rta{
+    float:right;background:whitesmoke;
+}
+.msj{
+    float:left;background:white;
+}
+.frame{
+    background:#e0e0de;
+    height:600px;
+    overflow:hidden;
+    padding:0;
+}
+.frame > div:last-of-type{
+    position:absolute;bottom:0;width:100%;display:flex;
+}
+body > div > div > div:nth-child(2) > span{
+    background: whitesmoke;padding: 10px;font-size: 21px;border-radius: 50%;
+}
+body > div > div > div.msj-rta.macro{
+    margin:auto;margin-left:1%;
+}
+ul {
+    width:100%;
+    list-style-type: none;
+    padding:18px;
+    position:absolute;
+    bottom:47px;
+    display:flex;
+    flex-direction: column;
+    top:0;
+    overflow-y:scroll;
+}
+.msj:before{
+    width: 0;
+    height: 0;
+    content:"";
+    top:-5px;
+    left:-14px;
+    position:relative;
+    border-style: solid;
+    border-width: 0 13px 13px 0;
+    border-color: transparent #ffffff transparent transparent;            
+}
+.msj-rta:after{
+    width: 0;
+    height: 0;
+    content:"";
+    top:-5px;
+    left:14px;
+    position:relative;
+    border-style: solid;
+    border-width: 13px 13px 0 0;
+    border-color: whitesmoke transparent transparent transparent;           
+}  
+input:focus{
+    outline: none;
+}        
+::-webkit-input-placeholder { /* Chrome/Opera/Safari */
+    color: #d4d4d4;
+}
+::-moz-placeholder { /* Firefox 19+ */
+    color: #d4d4d4;
+}
+:-ms-input-placeholder { /* IE 10+ */
+    color: #d4d4d4;
+}
+:-moz-placeholder { /* Firefox 18- */
+    color: #d4d4d4;
+}  
+[/file]
+
+[/if]
+[/template]
