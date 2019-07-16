@@ -316,12 +316,12 @@ public enum [it.name.toUpperFirst()/] implements StationaryState {
 	                .setText("Arrived in [it.name.toUpperFirst()/]");
 		}else {
 			Random r = new Random();
-			new SendMessage()
+			message1 = new SendMessage()
 	                .setChatId(to)
 	                .setText(messages.get(r.nextInt(messages.size())));
 		}
 		//}
-		
+		response.add(message1);
 		return response;
 	}
 
